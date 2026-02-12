@@ -7,6 +7,7 @@ function App() {
   }, []);
 
   const [cart, setCart] = useState([]);
+  const [quantities, setQuantities] = useState({});
   const [cartOpen, setCartOpen] = useState(false);
 
   const products = [
@@ -37,18 +38,22 @@ function App() {
   ];
 
   const addToCart = (product) => {
+    const qty = quantities[product.id] ? parseInt(quantities[product.id]) : 1;
     const existing = cart.find((item) => item.id === product.id);
+
     if (existing) {
       setCart(
         cart.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + qty }
             : item
         )
       );
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      setCart([...cart, { ...product, quantity: qty }]);
     }
+
+    setQuantities({ ...quantities, [product.id]: 1 });
   };
 
   const removeFromCart = (id) => {
@@ -74,7 +79,7 @@ function App() {
             style={styles.cartButton}
             onClick={() => setCartOpen(!cartOpen)}
           >
-            Cart ({cart.length})
+            Cart ({cart.reduce((sum, i) => sum + i.quantity, 0)})
           </button>
         </div>
       </nav>
@@ -103,85 +108,20 @@ function App() {
           <hr />
           <h4>Total: ${total.toFixed(2)}</h4>
           <button
-            style={styles.primaryButton}
-            onClick={() =>
-              window.location.href = "mailto:Invertebrotv@gmail.com?subject=Isopod Order&body=I would like to order:%0D%0A" +
-              cart
-                .map(
-                  (item) =>
-                    `${item.name} x ${item.quantity}`
-                )
-                .join("%0D%0A")
-            }
+            style={{ ...styles.primaryButton, marginTop: "10px", backgroundColor: "#ffc439", color: "black" }}
+            onClick={() => {
+              const summary = cart
+                .map(item => `${item.name} x ${item.quantity}`)
+                .join(", ");
+
+              const note = encodeURIComponent(`Isopod Order: ${summary}`);
+              const amount = total.toFixed(2);
+
+              window.location.href = `https://www.paypal.com/paypalme/YOURPAYPALUSERNAME/${amount}?note=${note}`;
+            }}
           >
-            Checkout via Email
+            Checkout with PayPal
           </button>
-        </div>
-      )}
-
-      {/* Hero */}
-      <section style={styles.hero}>
-        <h1 style={styles.title}>Invertebro Farm</h1>
-        <p style={styles.subtitle}>
-          Premium isopods bred in Australia. Healthy colonies, ethical breeding,
-          and quality genetics for hobbyists and collectors.
-        </p>
-        <button
-          style={styles.primaryButton}
-          onClick={() => document.getElementById("products").scrollIntoView({ behavior: "smooth" })}
-        >
-          Shop Now
-        </button>
-      </section>
-
-      {/* Products */}
-      <section id="products" style={styles.section}>
-        <h2 style={styles.sectionTitle}>Available Isopods</h2>
-        <div style={styles.productGrid}>
-          {products.map((product) => (
-            <div key={product.id} style={styles.card}>
-              <img
-                src={product.image}
-                alt={product.name}
-                style={styles.productImage}
-              />
-              <h3>{product.name}</h3>
-              <p>{product.description}</p>
-              <p style={{ fontWeight: "bold" }}>{product.displayPrice}</p>
-              <button
-                style={styles.secondaryButton}
-                onClick={() => addToCart(product)}
-              >
-                Add to Cart
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* About */}
-      <section id="about" style={{ ...styles.section, backgroundColor: "#1b2e1b" }}>
-        <h2 style={styles.sectionTitle}>About Us</h2>
-        <p style={styles.textBlock}>
-          Based in Australia, we specialise in breeding quality isopods with
-          proper nutrition, controlled humidity, and ethical care practices.
-          Our goal is to provide strong starter colonies and support the
-          growing invertebrate community.
-        </p>
-      </section>
-
-      {/* Contact */}
-      <section id="contact" style={styles.section}>
-        <h2 style={styles.sectionTitle}>Contact & Orders</h2>
-        <p>Email: Invertebrotv@gmail.com</p>
-      </section>
-
-      {/* Footer */}
-      <footer style={styles.footer}>
-        © {new Date().getFullYear()} Invertebro Farm. All rights reserved.
-      </footer>
-    </div>
-  );
 }
 
 const styles = {
