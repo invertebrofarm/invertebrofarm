@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import bgImage from "./isopod-bg.png";
 import aVulgare from "./a-vulgare.jpg";
 import pDilatatus from "./p-dilatatus.jpg";
@@ -12,7 +12,11 @@ function App() {
   const [cart, setCart] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [cartOpen, setCartOpen] = useState(false);
-  const [zoomImage, setZoomImage] = useState(null);
+
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [currentGallery, setCurrentGallery] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const touchStartX = useRef(null);
 
   const products = [
     {
@@ -22,7 +26,7 @@ function App() {
       displayPrice: "$1.00 / per count",
       description:
         "Hardy beginner-friendly species. Great for bioactive enclosures.",
-      image: aVulgare,
+      images: [aVulgare, aVulgare, aVulgare],
     },
     {
       id: 2,
@@ -31,7 +35,7 @@ function App() {
       displayPrice: "$2.00 / per count",
       description:
         "Fast breeding and prolific. Excellent clean-up crew.",
-      image: pDilatatus,
+      images: [pDilatatus, pDilatatus, pDilatatus],
     },
     {
       id: 3,
@@ -40,9 +44,39 @@ function App() {
       displayPrice: "$4.00 / per count",
       description:
         "Native Australian burrowing species with unique behavior.",
-      image: buddelundiaImg,
+      images: [buddelundiaImg, buddelundiaImg, buddelundiaImg],
     },
   ];
+
+  const openGallery = (images, index) => {
+    setCurrentGallery(images);
+    setCurrentIndex(index);
+    setGalleryOpen(true);
+  };
+
+  const nextImage = () => {
+    setCurrentIndex((prev) => (prev + 1) % currentGallery.length);
+  };
+
+  const prevImage = () => {
+    setCurrentIndex((prev) =>
+      prev === 0 ? currentGallery.length - 1 : prev - 1
+    );
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartX.current) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+
+    if (diff > 50) nextImage();
+    if (diff < -50) prevImage();
+
+    touchStartX.current = null;
+  };
 
   const addToCart = (product) => {
     const qty = quantities[product.id]
@@ -76,13 +110,10 @@ function App() {
 
   return (
     <div style={styles.page}>
-      {/* Navigation */}
       <nav style={styles.navbar}>
         <div style={styles.navLogo}>Invertebro Farm</div>
         <div style={styles.navLinks}>
-          <a href="#products" style={styles.navLink}>
-            Shop
-          </a>
+          <a href="#products" style={styles.navLink}>Shop</a>
           <button
             style={styles.cartButton}
             onClick={() => setCartOpen(!cartOpen)}
@@ -92,23 +123,36 @@ function App() {
         </div>
       </nav>
 
-      {/* Zoom Modal */}
-      {zoomImage && (
-        <div style={styles.modalOverlay} onClick={() => setZoomImage(null)}>
-          <img src={zoomImage} alt="Zoomed" style={styles.zoomedImage} />
+      {galleryOpen && (
+        <div
+          style={styles.modalOverlay}
+          onClick={() => setGalleryOpen(false)}
+        >
+          <div
+            style={styles.galleryContainer}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <button style={styles.closeButton} onClick={() => setGalleryOpen(false)}>✕</button>
+            <button style={styles.navArrowLeft} onClick={prevImage}>‹</button>
+            <img
+              src={currentGallery[currentIndex]}
+              alt="Gallery"
+              style={styles.zoomedImage}
+            />
+            <button style={styles.navArrowRight} onClick={nextImage}>›</button>
+          </div>
         </div>
       )}
 
-      {/* Cart Panel */}
       {cartOpen && (
         <div style={styles.cartPanel}>
           <h3>Your Cart</h3>
           {cart.length === 0 && <p>No items yet.</p>}
           {cart.map((item) => (
             <div key={item.id} style={styles.cartItem}>
-              <div>
-                {item.name} x {item.quantity}
-              </div>
+              <div>{item.name} x {item.quantity}</div>
               <div>
                 ${(item.price * item.quantity).toFixed(2)}
                 <button
@@ -133,12 +177,8 @@ function App() {
               const summary = cart
                 .map((item) => `${item.name} x ${item.quantity}`)
                 .join(", ");
-
-              const note = encodeURIComponent(
-                `Isopod Order: ${summary}`
-              );
+              const note = encodeURIComponent(`Isopod Order: ${summary}`);
               const amount = total.toFixed(2);
-
               window.location.href = `https://www.paypal.com/paypalme/YOURPAYPALUSERNAME/${amount}?note=${note}`;
             }}
           >
@@ -147,18 +187,22 @@ function App() {
         </div>
       )}
 
-      {/* Products */}
       <section id="products" style={styles.section}>
         <h2 style={styles.sectionTitle}>Available Isopods</h2>
         <div style={styles.productGrid}>
           {products.map((product) => (
             <div key={product.id} style={styles.card}>
-              <img
-                src={product.image}
-                alt={product.name}
-                style={styles.productImage}
-                onClick={() => setZoomImage(product.image)}
-              />
+              <div style={styles.thumbnailRow}>
+                {product.images.map((img, index) => (
+                  <img
+                    key={index}
+                    src={img}
+                    alt={product.name}
+                    style={styles.thumbnail}
+                    onClick={() => openGallery(product.images, index)}
+                  />
+                ))}
+              </div>
               <h3>{product.name}</h3>
               <p>{product.description}</p>
               <p>{product.displayPrice}</p>
@@ -185,7 +229,6 @@ function App() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer style={styles.footer}>
         © {new Date().getFullYear()} Invertebro Farm. All rights reserved.
       </footer>
@@ -213,20 +256,9 @@ const styles = {
     top: 0,
     zIndex: 1000,
   },
-  navLogo: {
-    fontWeight: "bold",
-    fontSize: "18px",
-  },
-  navLinks: {
-    display: "flex",
-    gap: "20px",
-    alignItems: "center",
-  },
-  navLink: {
-    color: "white",
-    textDecoration: "none",
-    fontSize: "14px",
-  },
+  navLogo: { fontWeight: "bold", fontSize: "18px" },
+  navLinks: { display: "flex", gap: "20px", alignItems: "center" },
+  navLink: { color: "white", textDecoration: "none", fontSize: "14px" },
   cartButton: {
     padding: "8px 14px",
     backgroundColor: "#4caf50",
@@ -258,14 +290,8 @@ const styles = {
     color: "red",
     cursor: "pointer",
   },
-  section: {
-    padding: "80px 20px",
-    textAlign: "center",
-  },
-  sectionTitle: {
-    fontSize: "28px",
-    marginBottom: "30px",
-  },
+  section: { padding: "80px 20px", textAlign: "center" },
+  sectionTitle: { fontSize: "28px", marginBottom: "30px" },
   productGrid: {
     display: "flex",
     flexWrap: "wrap",
@@ -278,12 +304,16 @@ const styles = {
     borderRadius: "12px",
     width: "250px",
   },
-  productImage: {
-    width: "100%",
-    height: "160px",
-    objectFit: "cover",
-    borderRadius: "8px",
+  thumbnailRow: {
+    display: "flex",
+    gap: "5px",
     marginBottom: "10px",
+  },
+  thumbnail: {
+    width: "70px",
+    height: "70px",
+    objectFit: "cover",
+    borderRadius: "6px",
     cursor: "pointer",
     transition: "transform 0.3s",
   },
@@ -293,16 +323,52 @@ const styles = {
     left: 0,
     width: "100%",
     height: "100%",
-    backgroundColor: "rgba(0,0,0,0.9)",
+    backgroundColor: "rgba(0,0,0,0.95)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 3000,
+    animation: "fadeIn 0.3s ease",
+  },
+  galleryContainer: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   zoomedImage: {
-    maxWidth: "90%",
-    maxHeight: "90%",
+    maxWidth: "90vw",
+    maxHeight: "85vh",
     borderRadius: "12px",
+    transition: "opacity 0.3s ease",
+  },
+  closeButton: {
+    position: "absolute",
+    top: "-40px",
+    right: "0",
+    background: "none",
+    border: "none",
+    color: "white",
+    fontSize: "28px",
+    cursor: "pointer",
+  },
+  navArrowLeft: {
+    position: "absolute",
+    left: "-50px",
+    fontSize: "40px",
+    background: "none",
+    border: "none",
+    color: "white",
+    cursor: "pointer",
+  },
+  navArrowRight: {
+    position: "absolute",
+    right: "-50px",
+    fontSize: "40px",
+    background: "none",
+    border: "none",
+    color: "white",
+    cursor: "pointer",
   },
   primaryButton: {
     padding: "12px 24px",
