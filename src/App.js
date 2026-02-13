@@ -12,6 +12,7 @@ function App() {
   const [cart, setCart] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [zoomImage, setZoomImage] = useState(null);
 
   const products = [
     {
@@ -91,6 +92,13 @@ function App() {
         </div>
       </nav>
 
+      {/* Zoom Modal */}
+      {zoomImage && (
+        <div style={styles.modalOverlay} onClick={() => setZoomImage(null)}>
+          <img src={zoomImage} alt="Zoomed" style={styles.zoomedImage} />
+        </div>
+      )}
+
       {/* Cart Panel */}
       {cartOpen && (
         <div style={styles.cartPanel}>
@@ -149,6 +157,7 @@ function App() {
                 src={product.image}
                 alt={product.name}
                 style={styles.productImage}
+                onClick={() => setZoomImage(product.image)}
               />
               <h3>{product.name}</h3>
               <p>{product.description}</p>
@@ -275,6 +284,25 @@ const styles = {
     objectFit: "cover",
     borderRadius: "8px",
     marginBottom: "10px",
+    cursor: "pointer",
+    transition: "transform 0.3s",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(0,0,0,0.9)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 3000,
+  },
+  zoomedImage: {
+    maxWidth: "90%",
+    maxHeight: "90%",
+    borderRadius: "12px",
   },
   primaryButton: {
     padding: "12px 24px",
