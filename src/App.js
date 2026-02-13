@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import bgImage from "./isopod-bg.png";
+import aVulgare from "./a-vulgare.jpg";
+import pDilatatus from "./p-dilatatus.jpg";
+import buddelundiaImg from "./buddelundia.jpg";
 
 function App() {
   useEffect(() => {
@@ -18,7 +21,7 @@ function App() {
       displayPrice: "$1.00 / per count",
       description:
         "Hardy beginner-friendly species. Great for bioactive enclosures.",
-      image: require("./a-vulgare.jpg"),
+      image: aVulgare,
     },
     {
       id: 2,
@@ -27,7 +30,7 @@ function App() {
       displayPrice: "$2.00 / per count",
       description:
         "Fast breeding and prolific. Excellent clean-up crew.",
-      image: require("./p-dilatatus.jpg"),
+      image: pDilatatus,
     },
     {
       id: 3,
@@ -36,7 +39,7 @@ function App() {
       displayPrice: "$4.00 / per count",
       description:
         "Native Australian burrowing species with unique behavior.",
-      image: require("./buddelundia.jpg"),
+      image: buddelundiaImg,
     },
   ];
 
